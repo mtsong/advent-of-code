@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "advent-of-code-2023"
+version = "2023"
+description = "Solutions to Advent of Code 2023"
+authors = ["Michael Song <msong@teamworks.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
