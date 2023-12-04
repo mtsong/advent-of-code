@@ -1,5 +1,5 @@
 DAY = 4
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 
 with open(f"{DAY}/example.txt" if USE_EXAMPLE else f"{DAY}/input.txt", encoding="utf-8") as f:
     lines = f.readlines()
