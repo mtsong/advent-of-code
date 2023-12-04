@@ -1,5 +1,5 @@
 DAY = 4
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 
 with open(f"{DAY}/example.txt" if USE_EXAMPLE else f"{DAY}/input.txt", encoding="utf-8") as f:
     lines = f.readlines()
@@ -32,8 +32,4 @@ for card in cards:
     copy_winning_cards(card)
 
 winning_cards = cards + winning_copies
-winning_cards.sort(key=lambda card: int(card[0]))
-for card in winning_cards:
-    _, winning_numbers, numbers = card
-    answer += pow(2, len(numbers & winning_numbers) + 1)
-print(f"The Elf's pile of scratchcards is worth {answer} points.")
+print(f"The Elf's ends up with {len(winning_cards)} cards.")
