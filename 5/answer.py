@@ -1,13 +1,13 @@
 import pathlib
 
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
     lines = f.read()
 
 
 def parse_map(map):
-    special_mappings = {}
+    special_mappings = []
     for line in map.split("\n"):
         if not line:
             continue
@@ -15,8 +15,7 @@ def parse_map(map):
         dest_start = int(dest_start)
         source_start = int(source_start)
         range_len = int(range_len)
-        for i in range(source_start, source_start + range_len):
-            special_mappings[i] = dest_start + i - source_start
+        special_mappings.append((dest_start, source_start, range_len))
     return special_mappings
 
 
@@ -34,7 +33,17 @@ for seed in seeds:
     route = []
     category = "seed"
     for category, map in maps:
-        next_lookup = map.get(next_lookup, next_lookup)
+        special_ranges = []
+        for map_range in map:
+            dest_start, source_start, range_len = map_range
+            source_range = range(source_start, source_start + range_len)
+            dest_range = range(dest_start, dest_start + range_len)
+            special_ranges.append((source_range, dest_range))
+
+        for special_range in special_ranges:
+            if next_lookup in special_range[0]:
+                next_lookup = special_range[1][next_lookup - special_range[0][0]]
+                break
         route.append(f"{category} {next_lookup}")
     locations.append(next_lookup)
     print(", ".join(route))
