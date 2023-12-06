@@ -37,44 +37,27 @@ for section in sections[1:]:
     name, map = section.split(":")
     maps.append((name.split()[0].split("-")[2], parse_map(map)))
 
-
-min_location = sys.maxsize
-
-
-def find_location(key, maps, category):
-    global min_location
-    if not maps:
-        return key
-    original_key = key
-    route = [f"{category} {key}"]
-    map_index = None
-    for i, (category, map) in enumerate(maps):
-        special_ranges = []
-        for map_range in map:
-            dest_start, source_start, range_len = map_range
-            source_range = range(source_start, source_start + range_len)
-            dest_range = range(dest_start, dest_start + range_len)
-            special_ranges.append((source_range, dest_range))
-
-        for special_range in special_ranges:
-            if key in special_range[0]:
-                key = special_range[1][key - special_range[0][0]]
-                if map_index is None:
-                    map_index = i
-                    original_key = key
-                break
-        route.append(f"{category} {key}")
-    if key < min_location:
-        min_location = key
-    print(", ".join(route))
-    if map_index is None:
-        return find_location(key + 1, maps, category)
-    return find_location(original_key + 1, maps[map_index + 1 :], maps[map_index][0])
-
-
-min_location = sys.maxsize
+locations = []
 for seed_range in seeds:
-    location = find_location(seed_range[0], maps, "seed")
-    if location < min_location:
-        min_location = location
-print(f"The lowest location number is {min_location}")
+    min_location = sys.maxsize
+    for key in seed_range:
+        category = "seed"
+        route = [f"{category} {key}"]
+        for category, map in maps:
+            special_ranges = []
+            for map_range in map:
+                dest_start, source_start, range_len = map_range
+                source_range = range(source_start, source_start + range_len)
+                dest_range = range(dest_start, dest_start + range_len)
+                special_ranges.append((source_range, dest_range))
+
+            for special_range in special_ranges:
+                if key in special_range[0]:
+                    key = special_range[1][key - special_range[0][0]]
+                    break
+            route.append(f"{category} {key}")
+        if key < min_location:
+            min_location = key
+    print(f"Minimum location for seed {seed_range} is {min_location}")
+    locations.append(min_location)
+print(f"The lowest location number is {min(locations)}")
