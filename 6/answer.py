@@ -1,7 +1,7 @@
 import re
 import pathlib
 
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 PART_1 = False
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
