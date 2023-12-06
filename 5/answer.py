@@ -1,7 +1,7 @@
 import pathlib
 import sys
 
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
     lines = f.read()
@@ -30,7 +30,7 @@ seed_ranges = sections[0].split(":")[1].split()
 for i, seed_range in enumerate(seed_ranges):
     if i % 2 == 0:
         seeds.append((range(int(seed_range), int(seed_range) + int(seed_ranges[i + 1]))))
-print(f"Found {sum(len(seed) for seed in seeds)} seeds")
+print(f"Found {sum(len(seed) for seed in seeds):,} seeds")
 
 maps = []
 for section in sections[1:]:
