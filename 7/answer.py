@@ -2,7 +2,7 @@ import pathlib
 from enum import Enum
 from collections import Counter
 
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 CWD = pathlib.Path(__file__).parent.resolve()
 hands = []
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
@@ -48,7 +48,8 @@ def get_hand(hand: tuple[str, int]) -> Hand:
         jokers = counter["J"]
         unique_cards.remove("J")
         counter.pop("J")
-    if len(unique_cards) == 1:  # Five of a kind
+        sets = counter.most_common()
+    if not unique_cards or len(unique_cards) == 1:  # Five of a kind
         return Hand.FIVE_OF_A_KIND.value
     for _, num in sets:
         num += jokers
