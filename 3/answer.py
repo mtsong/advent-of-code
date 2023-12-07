@@ -67,7 +67,7 @@ for token in tokenized_data:
                 ):
                     adjacent_numbers.append(number)
         if len(adjacent_numbers) == 2:
-            # print(f"Gear found at {token.line},{token.column} with part numbers {[a.value for a in adjacent_numbers]}")
+            print(f"Gear found at {token.line},{token.column} with part numbers {[a.value for a in adjacent_numbers]}")
             num_gears += 1
             answer += adjacent_numbers[0].value * adjacent_numbers[1].value
         else:
