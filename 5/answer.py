@@ -46,32 +46,96 @@ for category, map in maps:
         ranges[source_range] = dest_range
     routes.append((category, ranges))
 
+
 min_location = sys.maxsize
-for seed_range in seeds:
-    prev_category = "seed"
-    prev_seed_range = seed_range
-    for category, ranges in routes:
-        print(f"Checking {prev_category} {seed_range} in {category}")
-        for source_range, dest_range in ranges.items():
-            intersection = range_intersect(seed_range, source_range)
-            if intersection is not None:
-                print(f"{prev_category} {seed_range} is in {category} {source_range}")
-                if category == "location":
-                    break
-                dest_range_start = intersection.start - source_range.start
-                dest_range_end = intersection.stop - source_range.start
-                dest_range = range_intersect(
-                    range(dest_range_start + dest_range.start, dest_range_end + dest_range.start), dest_range
-                )
-                seed_range = dest_range
-                break
-            else:
-                print(f"{prev_category} {seed_range} is not in {category} {source_range}")
-        prev_category = category
+
+
+def follow_route(ranges, routes):
+    global min_location
+
+    print(f"Follow route started with {ranges}")
+    branched = False
+    for seed_range in ranges:
+        prev_category = "seed"
         prev_seed_range = seed_range
-        if category == "location":
-            location = min(seed_range.start, prev_seed_range.start)
-            if min(seed_range.start, prev_seed_range.start) < min_location:
-                min_location = location
-    print("==============================")
+        for i, (category, ranges) in enumerate(routes):
+            print(f"Checking {prev_category} {seed_range} in {category}")
+            new_seed_ranges = set()
+            for source_range, dest_range in ranges.items():
+                intersection = range_intersect(seed_range, source_range)
+                new_seed_range = seed_range
+                if intersection is not None:
+                    dest_range_start_offset = intersection.start - source_range.start
+                    dest_range_end_offset = intersection.stop - source_range.start
+                    print(f"{prev_category} {seed_range} is in {category} {source_range} -> {dest_range}")
+                    if len(intersection) == len(seed_range):
+                        new_seed_range = range(
+                            dest_range.start + dest_range_start_offset, dest_range.start + dest_range_end_offset
+                        )
+                    else:
+                        new_seed_range = range(
+                            dest_range.start + dest_range_start_offset, dest_range.start + len(seed_range)
+                        )
+                else:
+                    print(f"{prev_category} {seed_range} is not in {category} {source_range} -> {dest_range}")
+                new_seed_ranges.add(new_seed_range)
+            if new_seed_ranges:
+                if len(new_seed_ranges) > 1:
+                    print(f"New seed ranges are {new_seed_ranges}")
+                for new_seed_range in new_seed_ranges:
+                    if new_seed_range != seed_range:
+                        follow_route([new_seed_range], routes[i + 1 :])
+                        branched = True
+            if category == "location":
+                print(f"Location ranges are {source_range} and {seed_range}")
+                location = min(source_range.start, seed_range.start)
+                print(f"Location is {location}")
+                if min(seed_range.start, prev_seed_range.start) < min_location:
+                    min_location = location
+            prev_category = category
+            prev_seed_range = seed_range
+            seed_range = new_seed_range
+        if not branched:
+            print("==============================")
+        else:
+            branched = False
+            print("------------------------------")
+
+
+follow_route(seeds, routes)
 print(f"The lowest location number that corresponds to any of the initial seed numbers is {min_location}")
+
+
+"""
+Found 27 seeds
+seed 79 -> soil 81 -> fertilizer 81 -> water 81 -> light 74 -> temperature 78 -> humidity 78 -> location 82
+seed 80 -> soil 82 -> fertilizer 82 -> water 82 -> light 75 -> temperature 79 -> humidity 79 -> location 83
+seed 81 -> soil 83 -> fertilizer 83 -> water 83 -> light 76 -> temperature 80 -> humidity 80 -> location 84
+seed 82 -> soil 84 -> fertilizer 84 -> water 84 -> light 77 -> temperature 45 -> humidity 46 -> location 46
+seed 83 -> soil 85 -> fertilizer 85 -> water 85 -> light 78 -> temperature 46 -> humidity 47 -> location 47
+seed 84 -> soil 86 -> fertilizer 86 -> water 86 -> light 79 -> temperature 47 -> humidity 48 -> location 48
+seed 85 -> soil 87 -> fertilizer 87 -> water 87 -> light 80 -> temperature 48 -> humidity 49 -> location 49
+seed 86 -> soil 88 -> fertilizer 88 -> water 88 -> light 81 -> temperature 49 -> humidity 50 -> location 50
+seed 87 -> soil 89 -> fertilizer 89 -> water 89 -> light 82 -> temperature 50 -> humidity 51 -> location 51
+seed 88 -> soil 90 -> fertilizer 90 -> water 90 -> light 83 -> temperature 51 -> humidity 52 -> location 52
+seed 89 -> soil 91 -> fertilizer 91 -> water 91 -> light 84 -> temperature 52 -> humidity 53 -> location 53
+seed 90 -> soil 92 -> fertilizer 92 -> water 92 -> light 85 -> temperature 53 -> humidity 54 -> location 54
+seed 91 -> soil 93 -> fertilizer 93 -> water 93 -> light 86 -> temperature 54 -> humidity 55 -> location 55
+seed 92 -> soil 94 -> fertilizer 94 -> water 94 -> light 87 -> temperature 55 -> humidity 56 -> location 60
+Minimum location for seed range(79, 93) is 46
+seed 55 -> soil 57 -> fertilizer 57 -> water 53 -> light 46 -> temperature 82 -> humidity 82 -> location 86
+seed 56 -> soil 58 -> fertilizer 58 -> water 54 -> light 47 -> temperature 83 -> humidity 83 -> location 87
+seed 57 -> soil 59 -> fertilizer 59 -> water 55 -> light 48 -> temperature 84 -> humidity 84 -> location 88
+seed 58 -> soil 60 -> fertilizer 60 -> water 56 -> light 49 -> temperature 85 -> humidity 85 -> location 89
+seed 59 -> soil 61 -> fertilizer 61 -> water 61 -> light 54 -> temperature 90 -> humidity 90 -> location 94
+seed 60 -> soil 62 -> fertilizer 62 -> water 62 -> light 55 -> temperature 91 -> humidity 91 -> location 95
+seed 61 -> soil 63 -> fertilizer 63 -> water 63 -> light 56 -> temperature 92 -> humidity 92 -> location 96
+seed 62 -> soil 64 -> fertilizer 64 -> water 64 -> light 57 -> temperature 93 -> humidity 93 -> location 56
+seed 63 -> soil 65 -> fertilizer 65 -> water 65 -> light 58 -> temperature 94 -> humidity 94 -> location 57
+seed 64 -> soil 66 -> fertilizer 66 -> water 66 -> light 59 -> temperature 95 -> humidity 95 -> location 58
+seed 65 -> soil 67 -> fertilizer 67 -> water 67 -> light 60 -> temperature 96 -> humidity 96 -> location 59
+seed 66 -> soil 68 -> fertilizer 68 -> water 68 -> light 61 -> temperature 97 -> humidity 97 -> location 97
+seed 67 -> soil 69 -> fertilizer 69 -> water 69 -> light 62 -> temperature 98 -> humidity 98 -> location 98
+Minimum location for seed range(55, 68) is 56
+The lowest location number is 46
+"""
