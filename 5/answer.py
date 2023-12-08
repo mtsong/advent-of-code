@@ -1,7 +1,7 @@
 import pathlib
 import sys
 
-USE_EXAMPLE = False
+USE_EXAMPLE = True
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
     lines = f.read()
@@ -26,10 +26,10 @@ def parse_map(map: str) -> list[tuple[int, int, int]]:
 
 sections = lines.split("\n\n")
 seeds = []
-seed_ranges = sections[0].split(":")[1].split()
-for i, seed_range in enumerate(seed_ranges):
+seed_defs = sections[0].split(":")[1].split()
+for i, seed_range in enumerate(seed_defs):
     if i % 2 == 0:
-        seeds.append((range(int(seed_range), int(seed_range) + int(seed_ranges[i + 1]))))
+        seeds.append((range(int(seed_range), int(seed_range) + int(seed_defs[i + 1]))))
 print(f"Found {sum(len(seed) for seed in seeds):,} seeds")
 
 maps = []
@@ -37,27 +37,41 @@ for section in sections[1:]:
     name, map = section.split(":")
     maps.append((name.split()[0].split("-")[2], parse_map(map)))
 
-locations = []
-for seed_range in seeds:
-    min_location = sys.maxsize
-    for key in seed_range:
-        category = "seed"
-        route = [f"{category} {key}"]
-        for category, map in maps:
-            special_ranges = []
-            for map_range in map:
-                dest_start, source_start, range_len = map_range
-                source_range = range(source_start, source_start + range_len)
-                dest_range = range(dest_start, dest_start + range_len)
-                special_ranges.append((source_range, dest_range))
+routes = []
+for category, map in maps:
+    ranges = {}
+    for dest_start, source_start, range_len in map:
+        dest_range = range(dest_start, dest_start + range_len)
+        source_range = range(source_start, source_start + range_len)
+        ranges[source_range] = dest_range
+    routes.append((category, ranges))
 
-            for special_range in special_ranges:
-                if key in special_range[0]:
-                    key = special_range[1][key - special_range[0][0]]
+min_location = sys.maxsize
+for seed_range in seeds:
+    prev_category = "seed"
+    prev_seed_range = seed_range
+    for category, ranges in routes:
+        print(f"Checking {prev_category} {seed_range} in {category}")
+        for source_range, dest_range in ranges.items():
+            intersection = range_intersect(seed_range, source_range)
+            if intersection is not None:
+                print(f"{prev_category} {seed_range} is in {category} {source_range}")
+                if category == "location":
                     break
-            route.append(f"{category} {key}")
-        if key < min_location:
-            min_location = key
-    print(f"Minimum location for seed {seed_range} is {min_location}")
-    locations.append(min_location)
-print(f"The lowest location number is {min(locations)}")
+                dest_range_start = intersection.start - source_range.start
+                dest_range_end = intersection.stop - source_range.start
+                dest_range = range_intersect(
+                    range(dest_range_start + dest_range.start, dest_range_end + dest_range.start), dest_range
+                )
+                seed_range = dest_range
+                break
+            else:
+                print(f"{prev_category} {seed_range} is not in {category} {source_range}")
+        prev_category = category
+        prev_seed_range = seed_range
+        if category == "location":
+            location = min(seed_range.start, prev_seed_range.start)
+            if min(seed_range.start, prev_seed_range.start) < min_location:
+                min_location = location
+    print("==============================")
+print(f"The lowest location number that corresponds to any of the initial seed numbers is {min_location}")
