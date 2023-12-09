@@ -47,7 +47,7 @@ for category, map in maps:
     routes.append((category, ranges))
 
 
-def follow_route(input_range, prev_category, next_route_index):
+def follow_route(input_range, next_route_index):
     global location, min_location
 
     route = routes[next_route_index]
@@ -81,13 +81,13 @@ def follow_route(input_range, prev_category, next_route_index):
             if new_range.start < location:
                 location = new_range.start
         else:
-            follow_route(new_range, category, next_route_index + 1)
+            follow_route(new_range, next_route_index + 1)
 
 
 min_location = sys.maxsize
 location = sys.maxsize
 for seed_range in seeds:
-    follow_route(seed_range, "seed", 0)
+    follow_route(seed_range, 0)
     print(f"Minimum location for seed {seed_range} is {location}")
     if location < min_location:
         min_location = location
