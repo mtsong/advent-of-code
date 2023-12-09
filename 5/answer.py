@@ -47,62 +47,53 @@ for category, map in maps:
     routes.append((category, ranges))
 
 
-min_location = sys.maxsize
+def follow_route(input_range, prev_category, next_route_index):
+    global location, min_location
 
-
-def follow_route(ranges, routes):
-    global min_location
-
-    print(f"Follow route started with {ranges}")
-    branched = False
-    for seed_range in ranges:
-        prev_category = "seed"
-        prev_seed_range = seed_range
-        for i, (category, ranges) in enumerate(routes):
-            print(f"Checking {prev_category} {seed_range} in {category}")
-            new_seed_ranges = set()
-            for source_range, dest_range in ranges.items():
-                intersection = range_intersect(seed_range, source_range)
-                new_seed_range = seed_range
-                if intersection is not None:
-                    dest_range_start_offset = intersection.start - source_range.start
-                    dest_range_end_offset = intersection.stop - source_range.start
-                    print(f"{prev_category} {seed_range} is in {category} {source_range} -> {dest_range}")
-                    if len(intersection) == len(seed_range):
-                        new_seed_range = range(
-                            dest_range.start + dest_range_start_offset, dest_range.start + dest_range_end_offset
-                        )
-                    else:
-                        new_seed_range = range(
-                            dest_range.start + dest_range_start_offset, dest_range.start + len(seed_range)
-                        )
-                else:
-                    print(f"{prev_category} {seed_range} is not in {category} {source_range} -> {dest_range}")
-                new_seed_ranges.add(new_seed_range)
-            if new_seed_ranges:
-                if len(new_seed_ranges) > 1:
-                    print(f"New seed ranges are {new_seed_ranges}")
-                for new_seed_range in new_seed_ranges:
-                    if new_seed_range != seed_range:
-                        follow_route([new_seed_range], routes[i + 1 :])
-                        branched = True
-            if category == "location":
-                print(f"Location ranges are {source_range} and {seed_range}")
-                location = min(source_range.start, seed_range.start)
-                print(f"Location is {location}")
-                if min(seed_range.start, prev_seed_range.start) < min_location:
-                    min_location = location
-            prev_category = category
-            prev_seed_range = seed_range
-            seed_range = new_seed_range
-        if not branched:
-            print("==============================")
+    route = routes[next_route_index]
+    category = route[0]
+    new_ranges = set()
+    print(f"Checking {prev_category} {input_range} in {category}")
+    for source_range, dest_range in route[1].items():
+        intersection = range_intersect(input_range, source_range)
+        # Full intersection between input_range and source_range, continue with dest_range slice
+        if intersection == input_range:
+            new_ranges.add(
+                range(
+                    dest_range.start + intersection.start - source_range.start,
+                    dest_range.stop + intersection.stop - source_range.stop,
+                )
+            )
+            break
+        # Partial intersection between input_range and source_range, continue with intersection slice
+        if intersection:
+            new_ranges.add(range(input_range.start, intersection.start))
+            new_ranges.add(
+                range(
+                    dest_range.start + intersection.start - source_range.start,
+                    dest_range.start + intersection.stop - source_range.start,
+                )
+            )
+            new_ranges.add(range(intersection.stop, input_range.stop))
+    if not new_ranges:
+        new_ranges = {input_range}
+    for new_range in new_ranges:
+        if next_route_index == len(routes) - 1:
+            if new_range.start < location:
+                location = new_range.start
         else:
-            branched = False
-            print("------------------------------")
+            follow_route(new_range, category, next_route_index + 1)
 
 
-follow_route(seeds, routes)
+min_location = sys.maxsize
+location = sys.maxsize
+for seed_range in seeds:
+    follow_route(seed_range, "seed", 0)
+    print(f"Minimum location for seed {seed_range} is {location}")
+    if location < min_location:
+        min_location = location
+    location = sys.maxsize
+    print("========================================")
 print(f"The lowest location number that corresponds to any of the initial seed numbers is {min_location}")
 
 
