@@ -1,7 +1,7 @@
 import pathlib
 import sys
 
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
     lines = f.read()
@@ -53,28 +53,27 @@ def follow_route(input_range, prev_category, next_route_index):
     route = routes[next_route_index]
     category = route[0]
     new_ranges = set()
-    print(f"Checking {prev_category} {input_range} in {category}")
+    remaining_input_range = input_range
     for source_range, dest_range in route[1].items():
         intersection = range_intersect(input_range, source_range)
-        # Full intersection between input_range and source_range, continue with dest_range slice
-        if intersection == input_range:
-            new_ranges.add(
-                range(
-                    dest_range.start + intersection.start - source_range.start,
-                    dest_range.stop + intersection.stop - source_range.stop,
-                )
-            )
-            break
-        # Partial intersection between input_range and source_range, continue with intersection slice
-        if intersection:
-            new_ranges.add(range(input_range.start, intersection.start))
+        if intersection is not None:
             new_ranges.add(
                 range(
                     dest_range.start + intersection.start - source_range.start,
                     dest_range.start + intersection.stop - source_range.start,
                 )
             )
-            new_ranges.add(range(intersection.stop, input_range.stop))
+            if intersection == input_range:
+                remaining_input_range = None
+                break
+            else:
+                # Remove the intersecting numbers from input_range
+                if intersection.start > input_range.start:
+                    remaining_input_range = range(remaining_input_range.start, intersection.start)
+                elif intersection.stop < input_range.stop:
+                    remaining_input_range = range(intersection.stop, remaining_input_range.stop)
+    if remaining_input_range is not None:
+        new_ranges.add(remaining_input_range)
     if not new_ranges:
         new_ranges = {input_range}
     for new_range in new_ranges:
