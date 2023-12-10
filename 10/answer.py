@@ -185,5 +185,54 @@ while possible_enclosed:
             }
             next_adjacent_tiles |= nat
     possible_closed_regions.append(region)
+
+
+def get_navigable_pairs(tile: Tile) -> tuple[str, list[tuple[Tile, Tile]]]:
+    west, north, east, south = get_adjacent_tiles(tile)
+    pairs = []
+    direction = "W"
+    # West and northwest
+    if west.c == "-" and map[west.y - 1][west.x].c in ("-", "L", "J"):
+        pairs.append((west, map[west.y - 1][west.x]))
+    # South and southeast
+    elif south.c in ("7", "|") and map[south.y][south.x + 1].c in ("|", "F"):
+        direction = "S"
+        pairs.append((south, map[south.y][south.x + 1]))
+    # TODO: others if this works
+    return direction, pairs
+
+
+def is_navigable_pair(left: Tile, right: Tile) -> bool:
+    if left.c in ("7", "|", "J") and right.c in ("|", "F", "L"):
+        return True
+    return False
+
+
+def can_exit(direction: str, left: Tile, right: Tile) -> bool:
+    while within_bounds(left) and within_bounds(right):
+        if not is_navigable_pair(left, right):
+            return False
+        if direction == "S":
+            left = map[left.y + 1][left.x]
+            right = map[right.y + 1][right.x]
+    return True
+
+
+def is_enclosed(region: set[Tile]) -> bool:
+    for tile in region:
+        adjacent_tiles = get_adjacent_tiles(tile)
+        if any(not within_bounds(t) for t in adjacent_tiles) or any(t.c is None for t in adjacent_tiles):
+            return False
+        direction, navigable_pairs = get_navigable_pairs(tile)
+        if navigable_pairs:
+            for pair in navigable_pairs:
+                if can_exit(direction, pair[0], pair[1]):
+                    return False
+    return True
+
+
+enclosed_area = 0
 for region in possible_closed_regions:
-    print(region)
+    if is_enclosed(region):
+        enclosed_area += len(region)
+print(f"Enclosed area: {enclosed_area}")
