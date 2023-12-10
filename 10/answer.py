@@ -246,6 +246,21 @@ def can_exit(direction: str, tile_1: Tile, tile_2: Tile) -> bool:
                 return True
             tile_1 = map[tile_1.y + 1][tile_1.x]
             tile_2 = map[tile_2.y + 1][tile_2.x]
+        elif direction == "N":
+            if tile_1.y == min_y or tile_2.y == min_y:
+                return True
+            tile_1 = map[tile_1.y - 1][tile_1.x]
+            tile_2 = map[tile_2.y - 1][tile_2.x]
+        elif direction == "E":
+            if tile_1.x == max_x or tile_2.x == max_x:
+                return True
+            tile_1 = map[tile_1.y][tile_1.x + 1]
+            tile_2 = map[tile_2.y][tile_2.x + 1]
+        else:
+            if tile_1.x == min_x or tile_2.x == min_x:
+                return True
+            tile_1 = map[tile_1.y][tile_1.x - 1]
+            tile_2 = map[tile_2.y][tile_2.x - 1]
     return True
 
 
