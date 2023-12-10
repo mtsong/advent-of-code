@@ -1,16 +1,17 @@
 import pathlib
 from dataclasses import dataclass
 
+
+@dataclass
+class Tile:
+    x: int | None = None
+    y: int | None = None
+    c: str | None = None
+
+
 USE_EXAMPLE = True
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
-
-    @dataclass
-    class Tile:
-        x: int | None = None
-        y: int | None = None
-        c: str | None = None
-
     map = []
     for i, line in enumerate(f):
         row = []
@@ -83,10 +84,70 @@ elif adjacent_start_tiles[3].c in ("|", "L", "J"):
 
 print(f"Start tile: {start_tile}")
 
-# loop = False
-# current_tile = start_tile
-# while not loop:
-#     adjacent_tiles = get_adjacent_tiles(current_tile)
-#     for i, tile in enumerate(adjacent_tiles):
-#         print(i, tile)
-#     break
+if start_tile.c == "|":
+    route_starts = (map[start_tile.y - 1][start_tile.x], map[start_tile.y + 1][start_tile.x])
+elif start_tile.c == "-":
+    route_starts = (map[start_tile.y][start_tile.x - 1], map[start_tile.y][start_tile.x + 1])
+elif start_tile.c == "L":
+    route_starts = (map[start_tile.y - 1][start_tile.x], map[start_tile.y][start_tile.x + 1])
+elif start_tile.c == "J":
+    route_starts = (map[start_tile.y - 1][start_tile.x], map[start_tile.y][start_tile.x - 1])
+elif start_tile.c == "7":
+    route_starts = (map[start_tile.y + 1][start_tile.x], map[start_tile.y][start_tile.x - 1])
+elif start_tile.c == "F":
+    route_starts = (map[start_tile.y + 1][start_tile.x], map[start_tile.y][start_tile.x + 1])
+
+
+def get_direction(previous: Tile, current: Tile) -> str:
+    x_diff = current.x - previous.x
+    y_diff = current.y - previous.y
+    if x_diff == 1:
+        return "E"
+    if x_diff == -1:
+        return "W"
+    if y_diff == 1:
+        return "S"
+    return "N"
+
+
+def navigate(previous: Tile, current: Tile) -> Tile:
+    direction = get_direction(previous, current)
+    if current.c == "|":
+        if direction == "N":
+            return map[current.y - 1][current.x]
+        return map[current.y + 1][current.x]
+    if current.c == "-":
+        if direction == "E":
+            return map[current.y][current.x + 1]
+        return map[current.y][current.x - 1]
+    if current.c == "L":
+        if direction == "S":
+            return map[current.y][current.x + 1]
+        return map[current.y - 1][current.x]
+    if current.c == "J":
+        if direction == "S":
+            return map[current.y][current.x - 1]
+        return map[current.y - 1][current.x]
+    if current.c == "7":
+        if direction == "E":
+            return map[current.y + 1][current.x]
+        return map[current.y][current.x - 1]
+    if current.c == "F":
+        if direction == "N":
+            return map[current.y][current.x + 1]
+        return map[current.y + 1][current.x]
+
+
+steps = 1
+route_1_prev_tile = route_2_prev_tile = start_tile
+route_1_tile, route_2_tile = route_starts
+while route_1_tile != route_2_tile:
+    print(f"Route 1: {route_1_tile}, Route 2: {route_2_tile}")
+    route_1_next_tile = navigate(route_1_prev_tile, route_1_tile)
+    route_2_next_tile = navigate(route_2_prev_tile, route_2_tile)
+    route_1_prev_tile = route_1_tile
+    route_2_prev_tile = route_2_tile
+    route_1_tile = route_1_next_tile
+    route_2_tile = route_2_next_tile
+    steps += 1
+print(f"Routes met at {route_1_tile} == {route_2_tile} after {steps} steps")
