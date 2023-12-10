@@ -2,14 +2,14 @@ import pathlib
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Tile:
     x: int | None = None
     y: int | None = None
     c: str | None = None
 
 
-USE_EXAMPLE = False
+USE_EXAMPLE = True
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
     map = []
@@ -138,16 +138,52 @@ def navigate(previous: Tile, current: Tile) -> Tile:
         return map[current.y + 1][current.x]
 
 
-steps = 1
-route_1_prev_tile = route_2_prev_tile = start_tile
-route_1_tile, route_2_tile = route_starts
-while route_1_tile != route_2_tile:
-    print(f"Route 1: {route_1_tile}, Route 2: {route_2_tile}")
-    route_1_next_tile = navigate(route_1_prev_tile, route_1_tile)
-    route_2_next_tile = navigate(route_2_prev_tile, route_2_tile)
-    route_1_prev_tile = route_1_tile
-    route_2_prev_tile = route_2_tile
-    route_1_tile = route_1_next_tile
-    route_2_tile = route_2_next_tile
-    steps += 1
-print(f"Routes met at {route_1_tile} == {route_2_tile} after {steps} steps")
+prev_tile = start_tile
+current_tile = route_starts[0]
+route = [start_tile, current_tile]
+while current_tile != start_tile:
+    next_tile = navigate(prev_tile, current_tile)
+    prev_tile = current_tile
+    current_tile = next_tile
+    route.append(current_tile)
+
+min_x = min(route, key=lambda tile: tile.x).x
+max_x = max(route, key=lambda tile: tile.x).x
+min_y = min(route, key=lambda tile: tile.y).y
+max_y = max(route, key=lambda tile: tile.y).y
+
+
+def within_bounds(tile: Tile) -> bool:
+    return min_x <= tile.x <= max_x and min_y <= tile.y <= max_y
+
+
+route_tiles = set(route)
+
+
+possible_enclosed = set()
+for y in range(min_y, max_y + 1):
+    for x in range(min_x, max_x + 1):
+        tile = map[y][x]
+        if tile not in route_tiles:
+            possible_enclosed.add(tile)
+
+possible_closed_regions = []
+while possible_enclosed:
+    current_tile = possible_enclosed.pop()
+    region = {current_tile}
+    adjacent_tiles = get_adjacent_tiles(current_tile)
+    next_adjacent_tiles = set(adjacent_tiles)
+    while next_adjacent_tiles:
+        tile = next_adjacent_tiles.pop()
+        if within_bounds(tile) and tile not in route:
+            region.add(tile)
+            possible_enclosed.discard(tile)
+            nat = {
+                t
+                for t in get_adjacent_tiles(tile)
+                if t.c is not None and within_bounds(t) and t not in region and t not in route
+            }
+            next_adjacent_tiles |= nat
+    possible_closed_regions.append(region)
+for region in possible_closed_regions:
+    print(region)
