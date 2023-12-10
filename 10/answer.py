@@ -1,4 +1,5 @@
 import pathlib
+import copy
 from dataclasses import dataclass
 
 
@@ -154,6 +155,8 @@ max_y = max(route, key=lambda tile: tile.y).y
 
 
 def within_bounds(tile: Tile) -> bool:
+    if tile.x is None or tile.y is None:
+        return False
     return min_x <= tile.x <= max_x and min_y <= tile.y <= max_y
 
 
@@ -194,27 +197,55 @@ def get_navigable_pairs(tile: Tile) -> tuple[str, list[tuple[Tile, Tile]]]:
     # West and northwest
     if west.c == "-" and map[west.y - 1][west.x].c in ("-", "L", "J"):
         pairs.append((west, map[west.y - 1][west.x]))
+    # West and southwest
+    elif west.c == "-" and map[west.y + 1][west.x].c in ("-", "F", "7"):
+        pairs.append((map[west.y + 1][west.x], west))
+    # North and northwest
+    elif north.c == "|" and map[north.y][north.x - 1].c in ("|", "7", "J"):
+        direction = "N"
+        pairs.append((map[north.y][north.x - 1], north))
+    # North and northeast
+    elif north.c == "|" and map[north.y][north.x + 1].c in ("|", "L", "F"):
+        direction = "N"
+        pairs.append((north, map[north.y][north.x + 1]))
+    # East and northeast
+    elif east.c == "-" and map[east.y - 1][east.x].c in ("-", "L", "J"):
+        direction = "E"
+        pairs.append((map[east.y - 1][east.x], east))
+    # East and southeast
+    elif east.c == "-" and map[east.y + 1][east.x].c in ("-", "F", "7"):
+        direction = "E"
+        pairs.append((east, map[east.y + 1][east.x]))
     # South and southeast
-    elif south.c in ("7", "|") and map[south.y][south.x + 1].c in ("|", "F"):
+    elif south.c in ("7", "|") and map[south.y][south.x + 1].c in ("|", "F", "L"):
         direction = "S"
         pairs.append((south, map[south.y][south.x + 1]))
-    # TODO: others if this works
+    # South and southwest
+    elif south.c in ("7", "|", "F") and map[south.y][south.x - 1].c in ("|", "7", "J", "."):
+        direction = "S"
+        pairs.append((map[south.y][south.x - 1], south))
     return direction, pairs
 
 
-def is_navigable_pair(left: Tile, right: Tile) -> bool:
-    if left.c in ("7", "|", "J") and right.c in ("|", "F", "L"):
+def is_navigable_pair(direction: str, tile_1: Tile, tile_2: Tile) -> bool:
+    # Parallel pipes
+    if direction in ("N", "S") and tile_1.c in ("7", "|", "J", ".") and tile_2.c in ("|", "F", "L", "."):
         return True
+    if direction in ("E", "W") and tile_1.c in ("-", "L", "J") and tile_2.c in ("-", "F", "7"):
+        return True
+
     return False
 
 
-def can_exit(direction: str, left: Tile, right: Tile) -> bool:
-    while within_bounds(left) and within_bounds(right):
-        if not is_navigable_pair(left, right):
+def can_exit(direction: str, tile_1: Tile, tile_2: Tile) -> bool:
+    while within_bounds(tile_1) and within_bounds(tile_2):
+        if not is_navigable_pair(direction, tile_1, tile_2):
             return False
         if direction == "S":
-            left = map[left.y + 1][left.x]
-            right = map[right.y + 1][right.x]
+            if tile_1.y == max_y or tile_2.y == max_y:
+                return True
+            tile_1 = map[tile_1.y + 1][tile_1.x]
+            tile_2 = map[tile_2.y + 1][tile_2.x]
     return True
 
 
@@ -232,7 +263,15 @@ def is_enclosed(region: set[Tile]) -> bool:
 
 
 enclosed_area = 0
+marked_map = copy.deepcopy(map)
 for region in possible_closed_regions:
     if is_enclosed(region):
         enclosed_area += len(region)
+        for tile in region:
+            marked_map[tile.y][tile.x].c = "I"
+    else:
+        for tile in region:
+            marked_map[tile.y][tile.x].c = "O"
+for row in marked_map:
+    print("".join(t.c for t in row), end="")
 print(f"Enclosed area: {enclosed_area}")
