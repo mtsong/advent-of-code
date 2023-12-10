@@ -1,5 +1,4 @@
 import pathlib
-import copy
 from dataclasses import dataclass
 
 
@@ -113,30 +112,38 @@ def get_direction(previous: Tile, current: Tile) -> str:
 
 def navigate(previous: Tile, current: Tile) -> Tile:
     direction = get_direction(previous, current)
+    x, y = current.x, current.y
     if current.c == "|":
         if direction == "N":
-            return map[current.y - 1][current.x]
-        return map[current.y + 1][current.x]
-    if current.c == "-":
+            y = current.y - 1
+        else:
+            y = current.y + 1
+    elif current.c == "-":
         if direction == "E":
-            return map[current.y][current.x + 1]
-        return map[current.y][current.x - 1]
+            x = current.x + 1
+        else:
+            x = current.x - 1
     if current.c == "L":
         if direction == "S":
-            return map[current.y][current.x + 1]
-        return map[current.y - 1][current.x]
+            x = current.x + 1
+        else:
+            y = current.y - 1
     if current.c == "J":
         if direction == "S":
-            return map[current.y][current.x - 1]
-        return map[current.y - 1][current.x]
+            x = current.x - 1
+        else:
+            y = current.y - 1
     if current.c == "7":
         if direction == "E":
-            return map[current.y + 1][current.x]
-        return map[current.y][current.x - 1]
+            y = current.y + 1
+        else:
+            x = current.x - 1
     if current.c == "F":
         if direction == "N":
-            return map[current.y][current.x + 1]
-        return map[current.y + 1][current.x]
+            x = current.x + 1
+        else:
+            y = current.y + 1
+    return map[y][x]
 
 
 prev_tile = start_tile
@@ -181,10 +188,9 @@ while possible_enclosed:
         if within_bounds(tile) and tile not in route:
             region.add(tile)
             possible_enclosed.discard(tile)
+            adjacent_tiles = get_adjacent_tiles(tile)
             nat = {
-                t
-                for t in get_adjacent_tiles(tile)
-                if t.c is not None and within_bounds(t) and t not in region and t not in route
+                t for t in adjacent_tiles if t.c is not None and within_bounds(t) and t not in region and t not in route
             }
             next_adjacent_tiles |= nat
     possible_closed_regions.append(region)
@@ -227,19 +233,43 @@ def get_navigable_pairs(tile: Tile) -> tuple[str, list[tuple[Tile, Tile]]]:
     return direction, pairs
 
 
-def is_navigable_pair(direction: str, tile_1: Tile, tile_2: Tile) -> bool:
+def is_navigable_pair(direction: str, tile_1: Tile, tile_2: Tile) -> str | None:
     # Parallel pipes
     if direction in ("N", "S") and tile_1.c in ("7", "|", "J", ".") and tile_2.c in ("|", "F", "L", "."):
-        return True
+        return direction
     if direction in ("E", "W") and tile_1.c in ("-", "L", "J") and tile_2.c in ("-", "F", "7"):
-        return True
-
-    return False
+        return direction
+    # West right turn
+    if direction == "W" and tile_1.c in ("|", "7", "J") and tile_2.c in ("-", "L", "J"):
+        return "N"
+    # West left turn
+    if direction == "W" and tile_1.c in ("|", "7", "J") and tile_2.c in ("-", "F", "7"):
+        return "S"
+    # North right turn
+    if direction == "N" and tile_1.c in ("-", "L", "J") and tile_2.c in ("|", "F", "L"):
+        return "E"
+    # North left turn
+    if direction == "N" and tile_1.c in ("-", "L", "J") and tile_2.c in ("|", "7", "J"):
+        return "W"
+    # East right turn
+    if direction == "E" and tile_1.c in ("|", "F", "L") and tile_2.c in ("-", "F", "7"):
+        return "S"
+    # East left turn
+    if direction == "E" and tile_1.c in ("|", "F", "L") and tile_2.c in ("-", "L", "J"):
+        return "N"
+    # South right turn
+    if direction == "S" and tile_1.c in ("-", "F", "7") and tile_2.c in ("|", "7", "J"):
+        return "W"
+    # South left turn
+    if direction == "S" and tile_1.c in ("-", "F", "7") and tile_2.c in ("|", "F", "L"):
+        return "E"
+    return None
 
 
 def can_exit(direction: str, tile_1: Tile, tile_2: Tile) -> bool:
     while within_bounds(tile_1) and within_bounds(tile_2):
-        if not is_navigable_pair(direction, tile_1, tile_2):
+        direction = is_navigable_pair(direction, tile_1, tile_2)
+        if direction is None:
             return False
         if direction == "S":
             if tile_1.y == max_y or tile_2.y == max_y:
@@ -264,11 +294,42 @@ def can_exit(direction: str, tile_1: Tile, tile_2: Tile) -> bool:
     return True
 
 
+all_possible_enclosed = set.union(*possible_closed_regions) | route_tiles
+
+
+def get_diagonal_tiles(tile: Tile) -> list[Tile]:
+    diagonal_tiles = []
+    ground = Tile()
+    # Northwest
+    if tile.x > 0 and tile.y > 0:
+        diagonal_tiles.append(Tile(tile.x - 1, tile.y - 1, map[tile.y - 1][tile.x - 1].c))
+    else:
+        diagonal_tiles.append(ground)
+    # Northeast
+    if tile.y > 0 and tile.x < width - 1:
+        diagonal_tiles.append(Tile(tile.x + 1, tile.y - 1, map[tile.y - 1][tile.x + 1].c))
+    else:
+        diagonal_tiles.append(ground)
+    # Southeast
+    if tile.x < width - 1 and tile.y < height - 1:
+        diagonal_tiles.append(Tile(tile.x + 1, tile.y + 1, map[tile.y + 1][tile.x + 1].c))
+    else:
+        diagonal_tiles.append(ground)
+    # Southwest
+    if tile.y < height - 1 and tile.x > 0:
+        diagonal_tiles.append(Tile(tile.x - 1, tile.y + 1, map[tile.y + 1][tile.x - 1].c))
+    else:
+        diagonal_tiles.append(ground)
+    return diagonal_tiles
+
+
 def is_enclosed(region: set[Tile]) -> bool:
     for tile in region:
         adjacent_tiles = get_adjacent_tiles(tile)
-        if any(not within_bounds(t) for t in adjacent_tiles) or any(t.c is None for t in adjacent_tiles):
-            return False
+        diagonal_tiles = get_diagonal_tiles(tile)
+        for t in adjacent_tiles + diagonal_tiles:
+            if not within_bounds(t) or t.c is None or t not in all_possible_enclosed:
+                return False
         direction, navigable_pairs = get_navigable_pairs(tile)
         if navigable_pairs:
             for pair in navigable_pairs:
@@ -278,15 +339,35 @@ def is_enclosed(region: set[Tile]) -> bool:
 
 
 enclosed_area = 0
-marked_map = copy.deepcopy(map)
+pretty_map = []
+for row in map:
+    pretty_row = []
+    for tile in row:
+        if tile not in route_tiles:
+            pretty_row.append(Tile(tile.x, tile.y, "."))
+        else:
+            if tile.c == "-":
+                pretty_row.append(Tile(tile.x, tile.y, "―"))
+            elif tile.c == "L":
+                pretty_row.append(Tile(tile.x, tile.y, "╰"))
+            elif tile.c == "J":
+                pretty_row.append(Tile(tile.x, tile.y, "╯"))
+            elif tile.c == "7":
+                pretty_row.append(Tile(tile.x, tile.y, "╮"))
+            elif tile.c == "F":
+                pretty_row.append(Tile(tile.x, tile.y, "╭"))
+            else:
+                pretty_row.append(tile)
+    pretty_map.append(pretty_row)
+
 for region in possible_closed_regions:
     if is_enclosed(region):
         enclosed_area += len(region)
         for tile in region:
-            marked_map[tile.y][tile.x].c = "I"
+            pretty_map[tile.y][tile.x].c = "I"
     else:
         for tile in region:
-            marked_map[tile.y][tile.x].c = "O"
-for row in marked_map:
-    print("".join(t.c for t in row), end="")
+            pretty_map[tile.y][tile.x].c = "."
+for row in pretty_map:
+    print("".join(t.c for t in row))
 print(f"Enclosed area: {enclosed_area}")
