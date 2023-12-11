@@ -1,5 +1,4 @@
 import pathlib
-import queue
 
 
 USE_EXAMPLE = True
@@ -42,29 +41,10 @@ width = len(row)
 height = len(universe)
 
 
-def bfs(start: tuple[int, int], end: tuple[int, int]) -> int:
-    q = queue.SimpleQueue()
-    q.put([(start[1], start[0])])
-    seen = set([(start[1], start[0])])
-    while not q.empty():
-        path = q.get()
-        x, y = path[-1]
-        if (y, x) == end:
-            distance = len(path) - 1
-            print(
-                f"The distance between galaxy {galaxies.index(start) + 1} and galaxy {galaxies.index(end) + 1} is: {distance}"
-            )
-            return distance
-        for x2, y2 in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-            if 0 <= x2 < width and 0 <= y2 < height and (x2, y2) not in seen:
-                q.put(path + [(x2, y2)])
-                seen.add((x2, y2))
-
-
 total_distance = 0
 distances = {}
 for i, galaxy in enumerate(galaxies):
     for j, other_galaxy in enumerate(galaxies[i + 1 :]):
-        total_distance += bfs(galaxy, other_galaxy)
+        total_distance += abs(galaxy[0] - other_galaxy[0]) + abs(galaxy[1] - other_galaxy[1])
 
 print(f"The sum of the shortest path between every pair of galaxies is: {total_distance}")
