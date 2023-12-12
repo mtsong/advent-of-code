@@ -32,22 +32,84 @@ total_arrangements = 0
 for springs, config in lines:
     # springs = "?".join(itertools.repeat(springs, 5))
     config = [int(c) for c in config.split(",")]
-    i = 0
+    leading_dots = len(springs) - len(springs.lstrip("."))
+    trailing_dots = len(springs) - len(springs.rstrip("."))
+    min_string = "." * leading_dots + ".".join("#" * c for c in config) + "." * trailing_dots
     arrangements = 0
-    for c, next_c in pairwise(config):
-        min_chars = c + next_c + 1
-        possible_spring_count = 0
-        # TODO: Split into groups and count the number of #s and ?s in each group and check against min chars
-        while i < len(springs) and possible_spring_count < min_chars:
-            if springs[i] in ("#", "?"):
-                possible_spring_count += 1
-            i += 1
-            if i >= len(springs):
-                break
-        if possible_spring_count == min_chars:
-            arrangements += 1
-    print(f"The number of arrangements for {springs} and {config} is: {arrangements}")
-    total_arrangements += arrangements
+    if len(min_string) == len(springs):
+        print(f"{springs} => {min_string}, 1 arrangement")
+        total_arrangements += 1
+    else:
+        springs_groups = [list(g) for _, g in itertools.groupby(springs)]
+        min_string_groups = [list(g) for _, g in itertools.groupby(min_string)]
+        sgi = 0
+        msgi = 0
+        while sgi < len(springs_groups) and msgi < len(min_string_groups):
+            sg = springs_groups[sgi]
+            msg = min_string_groups[msgi]
+            while msgi < len(min_string_groups) and sgi < len(springs_groups) and msg[0] == "." and sg[0] == ".":
+                msgi += 1
+                sgi += 1
+                if msgi == len(min_string_groups) or sgi == len(springs_groups):
+                    break
+                msg = min_string_groups[msgi]
+                sg = springs_groups[sgi]
+            pass
+            if sg[0] == "?" and msg[0] == "#":
+                if len(sg) >= len(msg):
+                    arrangements += len(sg) / len(msg)
+                else:
+                    sgi += 1
+            sgi += 1
+            msgi += 1
+        if arrangements == 0:
+            arrangements = 1
+        total_arrangements += arrangements
+        print(f"{springs} => {min_string}, {arrangements} arrangements")
+    # i = 0
+    # gi = 0
+    # arrangements = 0
+    # groups = [list(g) for _, g in itertools.groupby(springs)]
+    # exact_match = True
+    # for c, next_c in pairwise(config):
+    #     min_chars = c + next_c + 1
+    #     group = groups[gi]
+    #     while all(c == "." for c in group):
+    #         gi += 1
+    #         i += len(group)
+    #         group = groups[gi]
+    #     if len(group) == min_chars:
+    #         arrangements += 1
+    #         gi += 1
+    #         i += len(group)
+    #         continue
+    #     spring_count = 0
+    #     q_count = 0
+    #     while i < len(springs) and springs[i] in ("#", "?") and spring_count + q_count <= c:
+    #         if springs[i] == "#":
+    #             spring_count += 1
+    #         elif springs[i] == "?":
+    #             q_count += 1
+    #         i += 1
+    #         if i >= len(springs):
+    #             break
+    #     if spring_count == 0 and q_count > 0:
+    #         if q_count <= min_chars and q_count >= c:
+    #             arrangements += q_count
+    #             gi += 1
+    #             i += len(group)
+    #     elif spring_count > 0 and q_count > 0:
+    #         if spring_count == c and exact_match:
+    #             if arrangements == 0:
+    #                 arrangements = 1
+    #         else:
+    #             exact_match = False
+    #             arrangements += 1
+    #         gi += 1
+    #         i += len(group)
+
+    # print(f"The number of arrangements for {springs} and {config} is: {arrangements}")
+    # total_arrangements += arrangements
 
     # i = 0
     # max_q_count = 0
