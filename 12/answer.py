@@ -1,8 +1,8 @@
+import itertools
 import pathlib
 import re
-import itertools
-import exrex
 
+import exrex
 
 USE_EXAMPLE = True
 CWD = pathlib.Path(__file__).parent.resolve()
@@ -52,7 +52,7 @@ for springs, config in lines:
             if next_sg is None:
                 compressed_springs_groups.append(sg)
                 break
-            if sg[0] == "?" and next_sg[0] == "#":
+            if sg[0] == "?" and next_sg[0] == "#" or sg[0] == "#" and next_sg[0] == "?":
                 compressed_springs_groups.append(sg + next_sg)
                 skip_next = True
             else:
@@ -70,15 +70,17 @@ for springs, config in lines:
                     break
                 msg = min_string_groups[msgi]
                 sg = compressed_springs_groups[sgi]
-            pass
+            sgi += 1
             if all(c == "?" for c in sg) and msg[0] == "#":
-                if len(sg) > len(msg):
+                if len(sg) >= len(msg):
                     arrangements += len(sg) / len(msg)
                     msgi += 1
+                    if sgi == len(compressed_springs_groups):
+                        sgi -= 1
+                        compressed_springs_groups[sgi] = compressed_springs_groups[sgi][len(msg) :]
                 # TODO: Remove matches from sg and don't increment sgi
             elif msg[0] == "#" and sg.count("#"):
                 msgi += 1
-            sgi += 1
         if arrangements == 0:
             arrangements = 1
         total_arrangements += arrangements
