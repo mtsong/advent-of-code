@@ -16,29 +16,56 @@ with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8
     mirrors.append(np.array(mirror))
 
 total = 0
-for i, mirror in enumerate(mirrors):
-    print(f"Finding symmetrical rows and columns for mirror {i + 1}")
+for mirror_num, mirror in enumerate(mirrors):
     # Check columns
     vertical_line_found = False
+    lefts = []
+    rights = []
     identical_columns = []
+    leftest = len(mirror[0])
+    rightest = 0
     for i in range(len(mirror[0])):
         for j in range(i + 1, len(mirror[0])):
             if np.array_equal(mirror[:, i], mirror[:, j]):
-                identical_columns += [i, j]
-    if sum(np.diff(sorted(identical_columns)) == 1) >= len(identical_columns) - 1:
-        left = len(identical_columns) // 2
-        print(f"Columns {left + 1} and {left + 2} form the vertical line of symmetry")
-        total += left + 1
-        vertical_line_found = True
+                if i < leftest:
+                    leftest = i
+                if j > rightest:
+                    rightest = j
+                identical_columns.append((i + 1, j + 1))
+                lefts.append(i + 1)
+                rights.append(j + 1)
+    if identical_columns:
+        if lefts[0] == 1:
+            prev_left, prev_right = lefts[0], rights[0]
+            column_sum = prev_left + prev_right
+            for left, right in zip(lefts[1:], rights[1:]):
+                if left == prev_left + 1 and right == prev_right - 1 and left + right == column_sum:
+                    prev_left, prev_right = left, right
+                else:
+                    break
+            if right == left + 1:
+                print(f"Columns {left} and {right} form the vertical line of symmetry for mirror {mirror_num + 1}")
+                total += left
+                vertical_line_found = True
+        if not vertical_line_found and rights[-1] == len(mirror[0]):
+            prev_left, prev_right = lefts[-1], rights[-1]
+            column_sum = prev_left + prev_right
+            for left, right in zip(reversed(lefts)[:-1], reversed(rights[:-1])):
+                if left == prev_left + 1 and right == prev_right - 1 and left + right == column_sum:
+                    prev_left, prev_right = left, right
+                else:
+                    break
+            print(f"Columns {left} and {right} form the vertical line of symmetry for mirror {mirror_num + 1}")
+            total += left
+            vertical_line_found = True
     # Check rows
     if not vertical_line_found:
         identical_rows = []
         for i in range(len(mirror)):
             for j in range(i + 1, len(mirror)):
                 if np.array_equal(mirror[i], mirror[j]):
-                    identical_rows += [i, j]
-        if sum(np.diff(sorted(identical_rows)) == 1) >= len(identical_rows) - 1:
-            top = len(identical_rows) // 2
-            print(f"Rows {top + 1} and {top + 2} form the horizontal line of symmetry")
-            total += (top + 1) * 100
+                    identical_rows.append((i + 1, j + 1))
+        top, bottom = identical_rows[-1]
+        print(f"Rows {top} and {top + 1} form the horizontal line of symmetry for mirror {mirror_num + 1}")
+        total += top * 100
 print(f"The number after summarizing all of my notes is {total}")
