@@ -42,26 +42,43 @@ for springs, config in lines:
     else:
         springs_groups = [list(g) for _, g in itertools.groupby(springs)]
         min_string_groups = [list(g) for _, g in itertools.groupby(min_string)]
+        compressed_springs_groups = []
+        skip_next = False
+        for i, sg in enumerate(springs_groups):
+            if skip_next:
+                skip_next = False
+                continue
+            next_sg = springs_groups[i + 1] if i + 1 < len(springs_groups) else None
+            if next_sg is None:
+                compressed_springs_groups.append(sg)
+                break
+            if sg[0] == "?" and next_sg[0] == "#":
+                compressed_springs_groups.append(sg + next_sg)
+                skip_next = True
+            else:
+                compressed_springs_groups.append(sg)
         sgi = 0
         msgi = 0
-        while sgi < len(springs_groups) and msgi < len(min_string_groups):
-            sg = springs_groups[sgi]
+        while sgi < len(compressed_springs_groups) and msgi < len(min_string_groups):
+            sg = compressed_springs_groups[sgi]
             msg = min_string_groups[msgi]
-            while msgi < len(min_string_groups) and sgi < len(springs_groups) and msg[0] == "." and sg[0] == ".":
+            while msgi < len(min_string_groups) and sgi < len(compressed_springs_groups) and msg[0] == ".":
                 msgi += 1
-                sgi += 1
-                if msgi == len(min_string_groups) or sgi == len(springs_groups):
+                if sg[0] == ".":
+                    sgi += 1
+                if msgi == len(min_string_groups) or sgi == len(compressed_springs_groups):
                     break
                 msg = min_string_groups[msgi]
-                sg = springs_groups[sgi]
+                sg = compressed_springs_groups[sgi]
             pass
-            if sg[0] == "?" and msg[0] == "#":
-                if len(sg) >= len(msg):
+            if all(c == "?" for c in sg) and msg[0] == "#":
+                if len(sg) > len(msg):
                     arrangements += len(sg) / len(msg)
-                else:
-                    sgi += 1
+                    msgi += 1
+                # TODO: Remove matches from sg and don't increment sgi
+            elif msg[0] == "#" and sg.count("#"):
+                msgi += 1
             sgi += 1
-            msgi += 1
         if arrangements == 0:
             arrangements = 1
         total_arrangements += arrangements
