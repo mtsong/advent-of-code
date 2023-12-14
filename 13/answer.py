@@ -2,7 +2,7 @@ import pathlib
 
 import numpy as np
 
-USE_EXAMPLE = True
+USE_EXAMPLE = False
 CWD = pathlib.Path(__file__).parent.resolve()
 with open(CWD / ("example.txt" if USE_EXAMPLE else "input.txt"), encoding="utf-8") as f:
     mirrors = []
@@ -46,32 +46,37 @@ for mirror_num, mirror in enumerate(mirrors):
                 found = True
             else:
                 column -= 1
+                right -= 1
     # Horizontal flip from top
     if not found:
         row = 0
+        top = 0
         while not found and row < len(mirror):
             submirror = mirror[row:, :]
             flipped = np.flip(submirror, axis=0)
             if np.array_equal(submirror, flipped):
-                lor = len(mirror) // 2 + 1
+                lor = (top + len(mirror)) // 2
                 print(f"Row {lor} and {lor + 1} form the horizontal line of symmetry for mirror {mirror_num + 1}")
                 total += lor * 100
                 found = True
             else:
                 row += 1
+                top += 1
     # Horizontal flip from bottom
     if not found:
         row = len(mirror) - 1
+        bottom = row
         while not found and row > 1:
             submirror = mirror[:row, :]
             flipped = np.flip(submirror, axis=0)
             if np.array_equal(submirror, flipped):
-                lor = len(mirror) // 2 + 1
+                lor = (bottom + len(mirror)) // 2
                 print(f"Row {lor} and {lor + 1} form the horizontal line of symmetry for mirror {mirror_num + 1}")
                 total += lor * 100
                 found = True
             else:
                 row -= 1
+                bottom -= 1
     # # Check columns
     # vertical_line_found = False
     # lefts = []
