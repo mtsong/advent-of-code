@@ -35,11 +35,12 @@ for mirror_num, mirror in enumerate(mirrors):
     # Vertical flip from end
     if not found:
         column = len(mirror[0]) - 1
-        while not found and column > 0:
+        right = column
+        while not found and column > 1:
             submirror = mirror[:, :column]
             flipped = np.flip(submirror, axis=1)
             if np.array_equal(submirror, flipped):
-                lor = len(mirror[0]) // 2 + 1
+                lor = (right + len(mirror[0])) // 2
                 print(f"Column {lor} and {lor + 1} form the vertical line of symmetry for mirror {mirror_num + 1}")
                 total += lor
                 found = True
